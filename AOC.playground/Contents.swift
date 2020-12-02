@@ -1,6 +1,6 @@
 import Foundation
 
-let dp = Day2Part1()
+let dp = Day2Part2()
 dp.loadInput()
 
 let result = dp.solve()

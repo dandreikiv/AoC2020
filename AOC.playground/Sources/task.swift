@@ -11,14 +11,14 @@ public struct PassPolicy {
     let password: String
 }
 
-public class Day2Part1 {
+public class Day2Part2 {
     private let url = Bundle.main.url(forResource: "input", withExtension: "txt")
     private var input: [PassPolicy] = []
 
     public init() {}
 }
 
-public extension Day2Part1 {
+public extension Day2Part2 {
 
     func loadInput() {
         guard let url = url, let str = try? String(contentsOf: url) else {
@@ -70,15 +70,16 @@ public extension Day2Part1 {
     }
 
     func validate(password: PassPolicy) -> Bool {
-        var charsMap: [Character: Int] = [:]
+        let a = password.password.map(Character.init)
+        let c = password.char
+        let range = password.range
 
-        for char in password.password {
-            let count = charsMap[char] ?? 0
-            charsMap[char] = count + 1
-        }
+        guard range.min <= a.count else { return false }
+        guard range.max <= a.count else { return false }
 
-        guard let count = charsMap[password.char] else { return false }
+        let c1 = a[range.min - 1]
+        let c2 = a[range.max - 1]
 
-        return count >= password.range.min && count <= password.range.max
+        return (c1 == c || c2 == c) && (c1 != c2)
     }
 }
