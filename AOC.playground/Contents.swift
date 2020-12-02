@@ -1,8 +1,8 @@
 import Foundation
 
-let dp = Day1Part2()
+let dp = Day2Part1()
 dp.loadInput()
-if let result = dp.solve() {
-    print(result)
-}
+
+let result = dp.solve()
+print(result)
 
