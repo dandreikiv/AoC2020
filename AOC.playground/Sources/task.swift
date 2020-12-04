@@ -1,10 +1,8 @@
 import Foundation
 
-public class Day3Part2 {
+public class Day4Part1 {
     private let url = Bundle.main.url(forResource: "input", withExtension: "txt")
-    private var input: [Character] = []
-    private var rows: Int = 0
-    private var cols: Int = 0
+    private var input: [String] = []
 
     public init() {
         loadInput()
@@ -14,50 +12,32 @@ public class Day3Part2 {
         guard let url = url, let str = try? String(contentsOf: url) else {
             fatalError("Couldn't load input")
         }
-        let lines = str.split(separator: "\n")
-        cols = lines.first?.count ?? 0
-        rows = lines.count
-
-        input = lines.flatMap { s in s.map(Character.init) }
-    }
-
-    func treesForSlope(right: Int, down: Int) -> Int {
-        var result = 0
-        var x = 0
-        var y = 0
-        var pos = 0
-
-        while y < rows && pos < input.count {
-            x = x + right
-            y = y + down
-
-            if x >= cols { x = x % cols }
-
-            pos = x + y * cols
-            if pos >= input.count { break }
-            result += input[pos] == "#" ? 1 : 0
-        }
-        return result
+        let lines = str
+            .replacingOccurrences(of: "\n\n", with: "#empty_line#")
+            .replacingOccurrences(of: "\n", with: " ")
+            .replacingOccurrences(of: "#empty_line#", with: "\n")
+            .split(separator: "\n")
+        input = lines.map(String.init)
     }
 }
 
-public extension Day3Part2 {
+public extension Day4Part1 {
 
     func solve() -> Int {
-        var result = 1
-        let slopes: [(right: Int, down: Int)] = [
-            (right: 1, down: 1),
-            (right: 3, down: 1),
-            (right: 5, down: 1),
-            (right: 7, down: 1),
-            (right: 1, down: 2),
-        ]
-
-        for slope in slopes {
-            let count = treesForSlope(right: slope.right, down: slope.down)
-            result *= count
+        var count = 0
+        let requiredFields = Set(["byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid", "cid"])
+        for line in input {
+            let fields = line.split(separator: " ").compactMap { field in
+                field.split(separator: ":").map(String.init).first
+            }
+            let fieldsSet = Set(fields)
+            let sub = requiredFields.subtracting(fieldsSet)
+            if sub.count == 0 {
+                count += 1
+            } else if sub.count == 1 && sub.contains("cid") {
+                count += 1
+            }
         }
-
-        return result
+        return count
     }
 }
