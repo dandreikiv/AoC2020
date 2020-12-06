@@ -1,6 +1,6 @@
 import Foundation
 
-public class Day5Part1 {
+public class Day5Part2 {
     private let url = Bundle.main.url(forResource: "input", withExtension: "txt")
     private var input: [[Character]] = []
 
@@ -17,18 +17,27 @@ public class Day5Part1 {
     }
 }
 
-public extension Day5Part1 {
+public extension Day5Part2 {
 
     func solve() -> Int {
-        var maxID = 0
+        var result = 0
+        var ids: [Int] = []
         for arr in input {
             let row = findRow(in: Array(arr[0...6]))
             let seat = findSeat(in: Array(arr[7...9]))
 
             let seatId = row * 8 + seat
-            maxID = max(maxID, seatId)
+            ids.append(seatId)
         }
-        return maxID
+
+        ids.sort()
+        for i in 0...(ids.count - 2) {
+            if ids[i + 1] - ids[i] > 1 {
+                result = ids[i] + 1
+            }
+        }
+
+        return result
     }
 
     func findRow(in chars: [Character]) -> Int {
