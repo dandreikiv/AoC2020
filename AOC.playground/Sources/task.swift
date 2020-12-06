@@ -1,8 +1,8 @@
 import Foundation
 
-public class Day4Part2 {
+public class Day5Part1 {
     private let url = Bundle.main.url(forResource: "input", withExtension: "txt")
-    private var input: [String] = []
+    private var input: [[Character]] = []
 
     public init() {
         loadInput()
@@ -12,68 +12,46 @@ public class Day4Part2 {
         guard let url = url, let str = try? String(contentsOf: url) else {
             fatalError("Couldn't load input")
         }
-        let lines = str
-            .replacingOccurrences(of: "\n\n", with: "#empty_line#")
-            .replacingOccurrences(of: "\n", with: " ")
-            .replacingOccurrences(of: "#empty_line#", with: "\n")
-            .split(separator: "\n")
-        input = lines.map(String.init)
+
+        input = str.split(separator: "\n").map { str in str.map(Character.init) }
     }
 }
 
-public extension Day4Part2 {
+public extension Day5Part1 {
 
     func solve() -> Int {
-        var count = 0
-        for line in input {
-            var passportFields: [String: String] = [:]
-            line.split(separator: " ").forEach { field in
-                let values = field.split(separator: ":").map(String.init)
-                passportFields[values[0]] = values[1]
-            }
+        var maxID = 0
+        for arr in input {
+            let row = findRow(in: Array(arr[0...6]))
+            let seat = findSeat(in: Array(arr[7...9]))
 
-            if validatePassport(fields: passportFields) {
-                count += 1
-            }
+            let seatId = row * 8 + seat
+            maxID = max(maxID, seatId)
         }
-        return count
+        return maxID
     }
 
-    func validatePassport(fields: [String: String]) -> Bool {
-        guard let yearValue = fields["byr"], let year = Int(yearValue) else { return false }
-        if year < 1920 || year > 2002 { return false }
-
-        guard let iyrValue = fields["iyr"], let iyr = Int(iyrValue) else { return false }
-        if iyr < 2010 || iyr > 2020 { return false }
-
-        guard let eyrValue = fields["eyr"], let eyr = Int(eyrValue) else { return false }
-        if eyr < 2020 || eyr > 2030 { return false }
-
-        guard let hgtValue = fields["hgt"] else { return false }
-        if hgtValue.contains("cm") {
-            guard let cmValue = Int(hgtValue.replacingOccurrences(of: "cm", with: "")) else { return false }
-            if cmValue < 150 || cmValue > 193 { return false }
-        } else if hgtValue.contains("in") {
-            guard let inValue = Int(hgtValue.replacingOccurrences(of: "in", with: "")) else { return false }
-            if inValue < 59 || inValue > 76 { return false }
-        } else {
-            return false
+    func findRow(in chars: [Character]) -> Int {
+        var l = 0, r = 127
+        for ch in chars {
+            if ch == "F" {
+                r  = (l + r) / 2
+            } else if ch == "B" {
+                l = (l + r) / 2 + 1
+            }
         }
+        return l
+    }
 
-        guard let hclValue = fields["hcl"] else { return false }
-        if hclValue.range(of: #"^#[0-9a-z]{6}$"#, options: .regularExpression) == nil {
-            return false
+    func findSeat(in chars: [Character]) -> Int {
+        var l = 0, r = 7
+        for ch in chars {
+            if ch == "L" {
+                r  = (l + r) / 2
+            } else if ch == "R" {
+                l = (l + r) / 2 + 1
+            }
         }
-
-        guard let eclValue = fields["ecl"] else { return false }
-        let eclValidValues = Set(["amb", "blu", "brn", "gry", "grn", "hzl", "oth"])
-        if eclValidValues.contains(eclValue) == false { return false }
-
-        guard let pidValue = fields["pid"] else { return false }
-        if pidValue.range(of: #"^[0-9]{9}$"#, options: .regularExpression) == nil {
-            return false
-        }
-
-        return true
+        return l
     }
 }
