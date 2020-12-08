@@ -1,5 +1,5 @@
 import Foundation
 
-let dp = Day7Part2()
+let dp = Day8Part1()
 let result = dp.solve()
 print(result)

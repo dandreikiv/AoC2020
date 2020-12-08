@@ -1,73 +1,60 @@
 import Foundation
 
-public class Day7Part2 {
-    struct Content: CustomDebugStringConvertible {
-        let color: String
-        let amount: Int
+public class Day8Part1 {
+    struct Instruction: CustomDebugStringConvertible {
+        enum Operation: String {
+            case nop
+            case jmp
+            case acc
+        }
+        let type: Operation
+        let offset: Int
 
         var debugDescription: String {
-            return "color: \(color), amount: \(amount)"
+            return "type: \(type.rawValue), offset: \(offset)"
         }
     }
     private let url = Bundle.main.url(forResource: "input", withExtension: "txt")
-    private var input: [String] = []
-    private var data: [String: [Content]] = [:]
+    private var input: [Instruction] = []
 
     public init() {
         loadInput()
-        prepareData()
     }
 
     func loadInput() {
         guard let url = url, let str = try? String(contentsOf: url) else {
             fatalError("Couldn't load input")
         }
-        input = str
-            .replacingOccurrences(of: "contain", with: ":")
-            .replacingOccurrences(of: ".", with: "")
-            .replacingOccurrences(of: "no other", with: "")
-            .replacingOccurrences(of: "bag[s]?", with: "", options: .regularExpression)
-            .split(separator: "\n")
-            .map(String.init)
-    }
-
-    func prepareData() {
-        var bagRules: [String: [Content]] = [:]
-        for str in input {
-            let rule = str.split(separator: ":")
-            let bagColor = rule[0].trimmingCharacters(in: .whitespacesAndNewlines)
-            let content = rule[1].split(separator: ",").compactMap { str -> Content? in
-                if let amountRange = str.range(of: "\\d+", options: .regularExpression) {
-                    let amount = Int(str[amountRange])!
-                    let bagColor = str[amountRange.upperBound...].trimmingCharacters(in: .whitespacesAndNewlines)
-                    let bagContent = Content(color: bagColor, amount: amount)
-                    return bagContent
-                }
-                return nil
-            }
-
-            var bags = bagRules[bagColor] ?? []
-            bags.append(contentsOf: content)
-            bagRules[bagColor] = bags
+        input = str.split(separator: "\n").map { inst in
+            let parts = inst.split(separator: " ").map(String.init)
+            let operation = Instruction.Operation(rawValue: parts[0])!
+            let offset = Int(parts[1])!
+            return Instruction(type: operation, offset: offset)
         }
-        data = bagRules
     }
 }
 
-public extension Day7Part2 {
+public extension Day8Part1 {
 
     func solve() -> Int {
-        return traverse(color: "shiny gold")
-    }
-
-    func traverse(color: String) -> Int {
-        guard let bags = data[color], !bags.isEmpty else { return 0 }
-
-        var count = 0
-        for bag in bags {
-            count += bag.amount + bag.amount * traverse(color: bag.color)
+        var executedCommands: [Int] = []
+        var acc = 0
+        var pointer = 0
+        var command = input[pointer]
+        while executedCommands.contains(pointer) == false {
+            switch command.type {
+                case .nop:
+                    pointer += 1
+                case .jmp:
+                    executedCommands.append(pointer)
+                    pointer += command.offset
+                case .acc:
+                    executedCommands.append(pointer)
+                    acc += command.offset
+                    pointer += 1
+            }
+            command = input[pointer]
         }
-
-        return count
+        return acc
     }
 }
