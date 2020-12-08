@@ -1,7 +1,13 @@
 import Foundation
 
-public class Day8Part1 {
-    struct Instruction: CustomDebugStringConvertible {
+public class Day8Part2 {
+    public enum ExitCode {
+        case loop(acc: Int)
+        case completed(acc: Int)
+        case unknown
+    }
+
+    public struct Instruction: CustomDebugStringConvertible {
         enum Operation: String {
             case nop
             case jmp
@@ -10,7 +16,7 @@ public class Day8Part1 {
         let type: Operation
         let offset: Int
 
-        var debugDescription: String {
+        public var debugDescription: String {
             return "type: \(type.rawValue), offset: \(offset)"
         }
     }
@@ -34,14 +40,47 @@ public class Day8Part1 {
     }
 }
 
-public extension Day8Part1 {
+public extension Day8Part2 {
 
     func solve() -> Int {
+        var program = input
+        var updated = false
+
+        for i in 0...(program.count - 1) {
+            let command = program[i]
+
+            if program[i].type == .nop {
+                program[i] = .init(type: .jmp, offset: command.offset)
+                updated = true
+            } else if program[i].type == .jmp {
+                program[i] = .init(type: .nop, offset: command.offset)
+                updated = true
+            }
+
+            if updated {
+                let result = executeProgram(commands: program)
+                switch result {
+                    case .completed(let acc):
+                        return acc
+                    case .loop:
+                        updated = false
+                        program = input
+                    case .unknown:
+                        break
+                }
+            }
+        }
+
+        return -1
+    }
+
+    func executeProgram(commands: [Instruction]) -> ExitCode {
         var executedCommands: [Int] = []
         var acc = 0
         var pointer = 0
-        var command = input[pointer]
-        while executedCommands.contains(pointer) == false {
+        var command = commands[pointer]
+        var result: ExitCode = .unknown
+        while true {
             switch command.type {
                 case .nop:
                     pointer += 1
@@ -53,8 +92,16 @@ public extension Day8Part1 {
                     acc += command.offset
                     pointer += 1
             }
-            command = input[pointer]
+            if pointer >= commands.count {
+                result = .completed(acc: acc)
+                break
+            }
+            if executedCommands.contains(pointer) {
+                result = .loop(acc: acc)
+                break
+            }
+            command = commands[pointer]
         }
-        return acc
+        return result
     }
 }
