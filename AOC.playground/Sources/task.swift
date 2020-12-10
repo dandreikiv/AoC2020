@@ -1,6 +1,6 @@
 import Foundation
 
-public class Day9Part2 {
+public class Day10Part1 {
     private let url = Bundle.main.url(forResource: "input", withExtension: "txt")
     private var input: [Int] = []
 
@@ -17,57 +17,25 @@ public class Day9Part2 {
     }
 }
 
-public extension Day9Part2 {
+public extension Day10Part1 {
 
     func solve() -> Int {
-        let invalidNumber = foundInvalidNumber(preambule: 25)
-
-        var slices: [[Int]] = []
-        for i in input {
-            slices.append([i])
+        input.sort()
+        if let maxJ = input.max() {
+            input.append(maxJ + 3)
         }
-        
-        var resultSlice: [Int] = []
-        var slicesCount = slices.count
-        while slicesCount > 1 {
-            var found = false
-            for i in 1...(slicesCount - 1) {
-                let nextSliseCount = slices[i].count
-                let index = nextSliseCount - 1
-                slices[i - 1].append(slices[i][index])
-                if slices[i - 1].reduce(0, +) == invalidNumber {
-                    resultSlice = slices[i - 1]
-                    found = true
-                    break
-                }
-            }
-            if found { break }
-            slicesCount = slicesCount - 1
-        }
+        print(input)
 
-        resultSlice.sort()
-        return resultSlice.min()! + resultSlice.max()!
-    }
-
-    func foundInvalidNumber(preambule length: Int) -> Int {
-        var result = 0
-
-        for i in length..<input.count {
-            let preambule = input[(i - length)..<i]
-            var found = false
-            for p in preambule {
-                let diff = input[i] - p
-                if preambule.contains(diff) {
-                    found = true
-                    break
-                }
-            }
-
-            if found == false {
-                result = input[i]
+        var tmp = 0
+        var stat: [Int: Int] = [:]
+        for i in 0...input.count - 1 {
+            let diff = input[i] - tmp
+            if diff <= 3 {
+                stat[diff] = (stat[diff] ?? 0) + 1
+                tmp = input[i]
             }
         }
-
-        return result
+        print(stat)
+        return (stat[1] ?? 0) * (stat[3] ?? 0)
     }
 }
