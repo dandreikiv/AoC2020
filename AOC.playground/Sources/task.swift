@@ -1,8 +1,11 @@
 import Foundation
 
-public class Day10Part2 {
+public class Day11Part1 {
     private let url = Bundle.main.url(forResource: "input", withExtension: "txt")
-    private var input: [Int] = []
+    // Layout 0 - floor, 1 - Empty, 2 - Occupied
+    private var input: [[Character]] = []
+    private var rows = 0
+    private var cols = 0
 
     public init() {
         loadInput()
@@ -12,68 +15,71 @@ public class Day10Part2 {
         guard let url = url, let str = try? String(contentsOf: url) else {
             fatalError("Couldn't load input")
         }
-        input = str.split(separator: "\n").map(String.init).compactMap(Int.init)
-//        print(input)
+        let lines = str.split(separator: "\n").map(String.init)
+        rows = lines.count
+        for l in lines {
+            let a = l.map(Character.init)
+            cols = a.count
+            input.append(a)
+        }
     }
 }
 
-public extension Day10Part2 {
+public extension Day11Part1 {
 
     func solve() -> Int {
-        input.sort()
-
-        if let maxJ = input.max() {
-            input.append(maxJ + 3)
-        }
-        print(input)
-
-        var tmp = 0
-        var stat: [Int: Int] = [:]
-        for i in 0...input.count - 1 {
-            let diff = input[i] - tmp
-            if diff <= 3 {
-                stat[diff] = (stat[diff] ?? 0) + 1
-                tmp = input[i]
+        var layout = input
+        var seatsChanged = 0
+        repeat {
+            seatsChanged = 0
+            let a = layout
+            for i in 0..<rows {
+                for j in 0..<cols {
+                    let num = numberOfAdjacentSeatsAt(row: i, col: j, in: a)
+                    if a[i][j] == "#" && num >= 4 {
+                        layout[i][j] = "L"
+                        seatsChanged += 1
+                    }
+                    else if a[i][j] == "L" && num == 0 {
+                        layout[i][j] = "#"
+                        seatsChanged += 1
+                    }
+                }
             }
-        }
+        } while seatsChanged > 0
 
-        var pathMem: [Int: Int] = [:]
-        let dict = prepare(array: [0] + input)
-        let count = traverse(dict: dict, start: 0, pathMem: &pathMem)
-        print(count)
-
-        return (stat[1] ?? 0) * (stat[3] ?? 0)
+        return countOccupiedSeatsIn(a: layout)
     }
 
-    func prepare(array a: [Int]) -> [Int: [Int]] {
-        print(a)
-        var dict: [Int: [Int]] = [:]
-        for i in 0...a.count - 2 {
-            var j = i + 1
-            var list: [Int] = []
-            dict[a[i]] = list
-            while j < a.count && a[j] - a[i] <= 3  {
-                list.append(a[j])
-                j = j + 1
-            }
-            dict[a[i]] = list
-        }
-        return dict
-    }
-
-    func traverse(dict: [Int: [Int]], start: Int, pathMem: inout [Int: Int]) -> Int {
+    func countOccupiedSeatsIn(a: [[Character]]) -> Int {
         var count = 0
-
-        if let pathCount = pathMem[start] { return pathCount }
-
-        if let a = dict[start] {
-            for key in a {
-                count += traverse(dict: dict, start: key, pathMem: &pathMem)
+        for i in 0..<rows {
+            for j in 0..<cols {
+                if a[i][j] == "#" { count += 1 }
             }
-            pathMem[start] = count
-        } else {
-            return 1
         }
+        return count
+    }
+
+    func numberOfAdjacentSeatsAt(row: Int, col: Int, in a: [[Character]]) -> Int {
+        var count = 0
+        // Up
+        if row - 1 >= 0, a[row - 1][col] == "#" { count += 1 }
+        // Down
+        if row + 1 < rows, a[row + 1][col] == "#" { count += 1 }
+        // Left
+        if col - 1 >= 0, a[row][col - 1] == "#" { count += 1 }
+        // Right
+        if col + 1 < cols, a[row][col + 1] == "#" { count += 1 }
+        // Diagonal up-left
+        if row - 1 >= 0, col - 1 >= 0, a[row - 1][col - 1] == "#" { count += 1 }
+        // Diagonal up-right
+        if row - 1 >= 0, col + 1 < cols, a[row - 1][col + 1] == "#" { count += 1 }
+        // Diagonal down-left
+        if row + 1 < rows, col - 1 >= 0, a[row + 1][col - 1] == "#" { count += 1 }
+        // Diagonal down-right
+        if row + 1 < rows, col + 1 < cols, a[row + 1][col + 1] == "#" { count += 1 }
+
         return count
     }
 }
