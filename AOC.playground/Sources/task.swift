@@ -1,13 +1,10 @@
 import Foundation
 
-public class Day11Part2 {
+public class Day12Part1 {
     private let url = Bundle.main.url(forResource: "input", withExtension: "txt")
-    // Layout 0 - floor, 1 - Empty, 2 - Occupied
-    private var input: [[Character]] = []
-    private var rows = 0
-    private var cols = 0
-    private var occupiedSeats: [(Int, Int)] = []
-    private var emptySeats: [(Int, Int)] = []
+    private var input: [String] = []
+    private var directions: [Character: Int] = ["E": 0, "S": 0, "W": 0, "N": 0]
+    private var angle = 0
 
     public init() {
         loadInput()
@@ -17,149 +14,45 @@ public class Day11Part2 {
         guard let url = url, let str = try? String(contentsOf: url) else {
             fatalError("Couldn't load input")
         }
-        let lines = str.split(separator: "\n").map(String.init)
-        rows = lines.count
-        for l in lines {
-            let a = l.map(Character.init)
-            cols = a.count
-            input.append(a)
-        }
+        input = str.split(separator: "\n").map(String.init)
     }
 }
 
-public extension Day11Part2 {
+public extension Day12Part1 {
 
     func solve() -> Int {
-        var layout = input
-        var seatsChanged = 0
-
-        repeat {
-            seatsChanged = 0
-            let a = layout
-            for i in 0..<rows {
-                for j in 0..<cols {
-                    let num = numberOfAdjacentSeatsAt(row: i, col: j, in: a)
-                    if a[i][j] == "#" && num >= 5 {
-                        layout[i][j] = "L"
-                        seatsChanged += 1
+        for d in input {
+            let instruction = d.first!
+            let value = Int(d.replacingOccurrences(of: String(instruction), with: ""))!
+            switch instruction {
+                case "L":
+                    angle = angle - value
+                case "R":
+                    angle = angle + value
+                case "F":
+                    if let d = directionForAngle(angle: angle) {
+                        let acc = directions[d] ?? 0
+                        directions[d] = value + acc
                     }
-                    else if a[i][j] == "L" && num == 0 {
-                        layout[i][j] = "#"
-                        seatsChanged += 1
-                    }
-                }
+                default:
+                    let acc = directions[instruction] ?? 0
+                    directions[instruction] = value + acc
             }
-        } while seatsChanged > 0
 
-        return countOccupiedSeatsIn(a: layout)
-    }
-
-    func traceSeatAt(row: Int, col: Int) -> Int {
-        return 0
-    }
-
-    func countOccupiedSeatsIn(a: [[Character]]) -> Int {
-        var count = 0
-        for i in 0..<rows {
-            for j in 0..<cols {
-                if a[i][j] == "#" { count += 1 }
-            }
         }
-        return count
+        let verticalDistance = abs(directions["S"]! - directions["N"]!)
+        let horizontalDistance = abs(directions["E"]! - directions["W"]!)
+        return verticalDistance + horizontalDistance
     }
 
-    func numberOfAdjacentSeatsAt(row: Int, col: Int, in a: [[Character]]) -> Int {
-        var count = 0
+    func directionForAngle(angle: Int) -> Character? {
+        var a = angle % 360
+        if a < 0 { a = a + 360 }
 
-        count += traceUp(row: row, col: col, in: a) ? 1 : 0
-        count += traceDown(row: row, col: col, in: a) ? 1 : 0
-        count += traceLeft(row: row, col: col, in: a) ? 1 : 0
-        count += traceRight(row: row, col: col, in: a) ? 1 : 0
-        count += traceUpLeft(row: row, col: col, in: a) ? 1 : 0
-        count += traceUpRight(row: row, col: col, in: a) ? 1 : 0
-        count += traceDownLeft(row: row, col: col, in: a) ? 1 : 0
-        count += traceDownRight(row: row, col: col, in: a) ? 1 : 0
-
-        return count
-    }
-
-    func traceUp(row: Int, col: Int, in a: [[Character]]) -> Bool {
-        var i = 1
-        while row - i >= 0 {
-            if a[row - i][col] == "L" { return false }
-            if a[row - i][col] == "#" { return true }
-            i = i + 1
-        }
-        return false
-    }
-
-    func traceDown(row: Int, col: Int, in a: [[Character]]) -> Bool {
-        var i = 1
-        while row + i < rows {
-            if a[row + i][col] == "L" { return false }
-            if a[row + i][col] == "#" { return true }
-            i = i + 1
-        }
-        return false
-    }
-
-    func traceLeft(row: Int, col: Int, in a: [[Character]]) -> Bool {
-        var i = 1
-        while col - i >= 0 {
-            if a[row][col - i] == "L" { return false }
-            if a[row][col - i] == "#" { return true }
-            i = i + 1
-        }
-        return false
-    }
-
-    func traceRight(row: Int, col: Int, in a: [[Character]]) -> Bool {
-        var i = 1
-        while col + i < cols {
-            if a[row][col + i] == "L" { return false }
-            if a[row][col + i] == "#" { return true }
-            i = i + 1
-        }
-        return false
-    }
-
-    func traceUpLeft(row: Int, col: Int, in a: [[Character]]) -> Bool {
-        var i = 1
-        while row - i >= 0, col - i >= 0 {
-            if a[row - i][col - i] == "L" { return false }
-            if a[row - i][col - i] == "#" { return true }
-            i = i + 1
-        }
-        return false
-    }
-
-    func traceUpRight(row: Int, col: Int, in a: [[Character]]) -> Bool {
-        var i = 1
-        while row - i >= 0, col + i < cols {
-            if a[row - i][col + i] == "L" { return false }
-            if a[row - i][col + i] == "#" { return true }
-            i = i + 1
-        }
-        return false
-    }
-
-    func traceDownLeft(row: Int, col: Int, in a: [[Character]]) -> Bool {
-        var i = 1
-        while row + i < rows, col - i >= 0 {
-            if a[row + i][col - i] == "L" { return false }
-            if a[row + i][col - i] == "#" { return true }
-            i = i + 1
-        }
-        return false
-    }
-
-    func traceDownRight(row: Int, col: Int, in a: [[Character]]) -> Bool {
-        var i = 1
-        while row + i < rows, col + i < cols {
-            if a[row + i][col + i] == "L" { return false }
-            if a[row + i][col + i] == "#" { return true }
-            i = i + 1
-        }
-        return false
+        if a == 0 { return "E" }
+        if a == 90 { return "S" }
+        if a == 180 { return "W" }
+        if a == 270 { return "N" }
+        return nil
     }
 }
