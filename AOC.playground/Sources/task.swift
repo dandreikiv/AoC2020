@@ -1,6 +1,6 @@
 import Foundation
 
-public class Day14Part1 {
+public class Day14Part2 {
     private let url = Bundle.main.url(forResource: "input", withExtension: "txt")
     private var data: [String] = []
     private var memory: [UInt: UInt] = [:]
@@ -18,7 +18,7 @@ public class Day14Part1 {
     }
 }
 
-public extension Day14Part1 {
+public extension Day14Part2 {
 
     func solve() -> UInt {
         var mask: [Character] = []
@@ -28,29 +28,43 @@ public extension Day14Part1 {
             } else if ins.contains("mem") {
                 let parts = ins.split(separator: "=").map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
                 let value = UInt(parts[1])!
-                let address = UInt(parts[0].replacingOccurrences(of: "mem[", with: "").replacingOccurrences(of: "]", with: ""))!
-                write(value: value, to: address , using: mask)
+                let adrs = UInt(parts[0].replacingOccurrences(of: "mem[", with: "").replacingOccurrences(of: "]", with: ""))!
+                let addresses = calculateAddresses(for: adrs, using: mask)
+                for a in addresses {
+                    memory[a] = value
+                }
             }
-        }
-
-        for (k, v) in memory {
-            print("mem[\(k)] = \(v)")
         }
 
         return memory.map { $0.1 }.reduce(0, +)
     }
 
-    func write(value: UInt, to address: UInt, using mask: [Character]) {
-        var r: UInt = value
-        var t: UInt = 1
-        for el in mask.reversed() {
-            if el == "0" {
-                r = r & (const - t)
-            } else if el == "1" {
-                r = r | t
+    func calculateAddresses(for address: UInt, using mask: [Character]) -> [UInt] {
+        var result: [UInt] = []
+        var flexIdx: [UInt] = []
+        var value = address
+        var idx = 0
+        for (i, c) in mask.enumerated().reversed() {
+            if c == "X" {
+                flexIdx.append(35 - UInt(i))
+                value |= (1 << idx)
+            } else if c == "1" {
+                value |= (1 << idx)
             }
-            t = t * 2
+            idx += 1
         }
-        memory[address] = r
+
+        result = [value]
+
+        for i in flexIdx {
+            var t: [UInt] = []
+            for addr in result {
+                t.append(addr & (const - (1 << i))) // X with 0
+                t.append(addr | (1 << i)) // X with 1
+            }
+            result = t
+        }
+
+        return result
     }
 }
