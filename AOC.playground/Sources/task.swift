@@ -26,23 +26,21 @@ public extension Day15Part1 {
         }
         var last = data[data.count - 1]
         var turn = data.count + 1
-        while turn <= 2020 {
-//            print("turn: \(turn), last spoken: \(last)")
+        while turn <= 30000000 {
             if let t = turns[last] {
-                if t.count >= 2 {
-                    let newNumber = t[t.count - 1] - t[t.count - 2]
-                    turns[newNumber] = (turns[newNumber] ?? []) + [turn]
-                    last = newNumber
+                let newNumber = t.count >= 2 ? t[t.count - 1] - t[t.count - 2] : 0
+
+                if let tn = turns[newNumber] {
+                    turns[newNumber] = [tn.last!, turn]
                 } else {
-                    last = 0
-                    turns[last] = (turns[last] ?? []) + [turn]
+                    turns[newNumber] = [turn]
                 }
+
+                last = newNumber
             } else {
                 last = 0
                 turns[last] = [turn]
             }
-//            print("new number: \(last)")
-//            print("--------------------------------")
             turn = turn + 1
         }
 
