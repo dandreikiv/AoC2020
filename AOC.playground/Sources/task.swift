@@ -1,6 +1,6 @@
 import Foundation
 
-public class Day16Part1 {
+public class Day16Part2 {
     struct Range {
         let start: Int
         let end: Int
@@ -10,12 +10,16 @@ public class Day16Part1 {
         }
     }
 
-    struct RuleRange {
+    struct RuleRange: CustomDebugStringConvertible {
         let start: Range
         let end: Range
 
         func contains(number: Int) -> Bool {
             return start.contains(number: number) || end.contains(number: number)
+        }
+
+        var debugDescription: String {
+            return "\(start.start)-\(start.end) or \(end.start)-\(end.end)"
         }
     }
 
@@ -23,6 +27,7 @@ public class Day16Part1 {
     private var data: [Int] = []
     private var rules: [String: RuleRange] = [:]
     private var tickets: [[Int]] = []
+    private var myTicket: [Int] = []
 
     public init() {
         loadInput()
@@ -48,10 +53,14 @@ public class Day16Part1 {
             idx = idx + 1
             line = lines[idx]
         }
+
+        // Skip to the "your ticket:"
+        while lines[idx].contains("your ticket:") == false { idx = idx + 1 }
+        idx = idx + 1
+        myTicket = lines[idx].split(separator: ",").map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }.compactMap(Int.init)
+
         // Skip to the "nearby tickets:"
-        while lines[idx].contains("nearby tickets:") == false {
-            idx = idx + 1
-        }
+        while lines[idx].contains("nearby tickets:") == false { idx = idx + 1 }
         idx = idx + 1
 
         while idx < lines.count {
@@ -60,6 +69,7 @@ public class Day16Part1 {
             tickets.append(ticket)
             idx = idx + 1
         }
+        print("myTicket: \(myTicket)")
     }
 
     func rangeFromString(_ string: String) -> Range {
@@ -68,20 +78,56 @@ public class Day16Part1 {
         let end = Int(parts[1])!
         return .init(start: start, end: end)
     }
+
+    func satisfyingRule(for position: Int, in tickets: [[Int]]) -> (rule: String, range: RuleRange)? {
+        let values = tickets.map { $0[position] }
+        var rls = rules
+        var validRules: [String: RuleRange] = [:]
+        for v in values {
+            for (rule, range) in rls {
+                if range.contains(number: v) {
+                    validRules[rule] = range
+                }
+            }
+            rls = validRules
+            validRules = [:]
+        }
+
+        if rls.count == 1 {
+            return (rule: rls.first!.key, range: rls.first!.value)
+        }
+
+        return nil
+    }
 }
 
-public extension Day16Part1 {
+public extension Day16Part2 {
 
     func solve() -> Int {
-        var nonValidNumbers: [Int] = []
-        for t in tickets {
-            for n in t {
-                if isNumberValid(number: n) == false {
-                    nonValidNumbers.append(n)
+        let validTickets = tickets.filter(isTicketValid)
+        let count = tickets[0].count
+        var resultPositions: [Int] = []
+        while rules.count > 0 {
+            for pos in 0..<count {
+                if let res = satisfyingRule(for: pos, in: validTickets) {
+                    print("pos: \(pos), rule: \(res.rule)")
+                    rules.removeValue(forKey: res.rule)
+                    if res.rule.contains("departure") {
+                        resultPositions.append(pos)
+                    }
                 }
             }
         }
-        return nonValidNumbers.reduce(0, +)
+
+        print(resultPositions)
+        return resultPositions.map { myTicket[$0] }.reduce(1, *)
+    }
+
+    func isTicketValid(ticket: [Int]) -> Bool {
+        for t in ticket {
+            if isNumberValid(number: t) == false { return false }
+        }
+        return true
     }
 
     func isNumberValid(number: Int) -> Bool {
