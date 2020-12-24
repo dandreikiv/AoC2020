@@ -1,33 +1,9 @@
 import Foundation
 
-public class Day16Part2 {
-    struct Range {
-        let start: Int
-        let end: Int
-
-        func contains(number: Int) -> Bool {
-            return start <= number && number <= end
-        }
-    }
-
-    struct RuleRange: CustomDebugStringConvertible {
-        let start: Range
-        let end: Range
-
-        func contains(number: Int) -> Bool {
-            return start.contains(number: number) || end.contains(number: number)
-        }
-
-        var debugDescription: String {
-            return "\(start.start)-\(start.end) or \(end.start)-\(end.end)"
-        }
-    }
+public class Day17Part1 {
 
     private let url = Bundle.main.url(forResource: "input", withExtension: "txt")
-    private var data: [Int] = []
-    private var rules: [String: RuleRange] = [:]
-    private var tickets: [[Int]] = []
-    private var myTicket: [Int] = []
+    private var cubes: [[Int]: Bool] = [:]
 
     public init() {
         loadInput()
@@ -38,103 +14,120 @@ public class Day16Part2 {
             fatalError("Couldn't load input")
         }
         let lines = str.split(separator: "\n").map(String.init)
-        var idx = 0
-        var line = lines[idx]
-        // Get rules
-        while line.contains("your ticket:") == false {
-            let parts = line.split(separator: ":")
-            let rule = String(parts[0])
-            let rangeParts = parts[1].replacingOccurrences(of: "or", with: ",").split(separator: ",").map(String.init)
-
-            let rangeOne = rangeFromString(rangeParts[0])
-            let rangeTwo = rangeFromString(rangeParts[1])
-
-            rules[rule] = RuleRange(start: rangeOne, end: rangeTwo)
-            idx = idx + 1
-            line = lines[idx]
-        }
-
-        // Skip to the "your ticket:"
-        while lines[idx].contains("your ticket:") == false { idx = idx + 1 }
-        idx = idx + 1
-        myTicket = lines[idx].split(separator: ",").map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }.compactMap(Int.init)
-
-        // Skip to the "nearby tickets:"
-        while lines[idx].contains("nearby tickets:") == false { idx = idx + 1 }
-        idx = idx + 1
-
-        while idx < lines.count {
-            let ticket = lines[idx].split(separator: ",").map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
-                .compactMap(Int.init)
-            tickets.append(ticket)
-            idx = idx + 1
-        }
-        print("myTicket: \(myTicket)")
-    }
-
-    func rangeFromString(_ string: String) -> Range {
-        let parts = string.split(separator: "-").map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
-        let start = Int(parts[0])!
-        let end = Int(parts[1])!
-        return .init(start: start, end: end)
-    }
-
-    func satisfyingRule(for position: Int, in tickets: [[Int]]) -> (rule: String, range: RuleRange)? {
-        let values = tickets.map { $0[position] }
-        var rls = rules
-        var validRules: [String: RuleRange] = [:]
-        for v in values {
-            for (rule, range) in rls {
-                if range.contains(number: v) {
-                    validRules[rule] = range
-                }
+        var yi = 0
+        for line in lines {
+            for (xi, ch) in line.enumerated() {
+                cubes[[xi, yi, 0]] = (ch == "#") ? true : false
             }
-            rls = validRules
-            validRules = [:]
+            yi += 1
         }
 
-        if rls.count == 1 {
-            return (rule: rls.first!.key, range: rls.first!.value)
-        }
-
-        return nil
+        cubes.forEach { print($0) }
     }
 }
 
-public extension Day16Part2 {
+public extension Day17Part1 {
 
     func solve() -> Int {
-        let validTickets = tickets.filter(isTicketValid)
-        let count = tickets[0].count
-        var resultPositions: [Int] = []
-        while rules.count > 0 {
-            for pos in 0..<count {
-                if let res = satisfyingRule(for: pos, in: validTickets) {
-                    print("pos: \(pos), rule: \(res.rule)")
-                    rules.removeValue(forKey: res.rule)
-                    if res.rule.contains("departure") {
-                        resultPositions.append(pos)
+        var newSpace: [[Int]: Bool] = [:]
+        for cycle in 1...6 {
+            print("========================================")
+            print("cycle: \(cycle)")
+            print("========================================")
+            var arrX: [Int] = []
+            var arrY: [Int] = []
+            var arrZ: [Int] = []
+
+            for (cube,_) in cubes {
+                arrX.append(cube[0])
+                arrY.append(cube[1])
+                arrZ.append(cube[2])
+            }
+
+            let minX = arrX.min() ?? 0
+            let maxX = arrX.max() ?? 0
+
+            let minY = arrY.min() ?? 0
+            let maxY = arrY.max() ?? 0
+
+            let minZ = arrZ.min() ?? 0
+            let maxZ = arrZ.max() ?? 0
+
+            for xi in (minX - 1)...(maxX + 1) {
+                for yi in (minY - 1)...(maxY + 1) {
+                    for zi in (minZ - 1)...(maxZ + 1) {
+                        let c = [xi, yi, zi]
+                        newSpace[c] = stateForCube(a: c)
                     }
+                }
+            }
+            cubes = newSpace
+            var count = 0
+
+            let zArr = cubes.map { ($0.0[2] ) }
+            let zMin = zArr.min() ?? 0
+            let zMax = zArr.max() ?? 0
+            for z in zMin...zMax {
+                printLayer(z: z)
+            }
+
+            for (_, isActive) in cubes {
+                if isActive {
+                    count += 1
+                }
+            }
+
+            print("cycle: \(cycle)", "count: \(count)")
+        }
+
+        return 0
+    }
+
+    func stateForCube(a: [Int]) -> Bool {
+        let x = a[0]
+        let y = a[1]
+        let z = a[2]
+
+        let isActive = cubes[a] ?? false
+        var activeCount = 0
+        for xi in (x - 1)...(x + 1) {
+            for yi in (y - 1)...(y + 1) {
+                for zi in (z - 1)...(z + 1) {
+                    if x == xi, y == yi, z == zi { continue }
+                    let v = cubes[ [xi, yi, zi] ] ?? false
+                    activeCount += v ? 1 : 0
                 }
             }
         }
 
-        print(resultPositions)
-        return resultPositions.map { myTicket[$0] }.reduce(1, *)
+        if isActive && (activeCount == 2 || activeCount == 3) {
+            return true
+        }
+
+        if (isActive == false) && (activeCount == 3) {
+            return true
+        }
+
+        return false
     }
 
-    func isTicketValid(ticket: [Int]) -> Bool {
-        for t in ticket {
-            if isNumberValid(number: t) == false { return false }
+    func printLayer(z: Int) {
+        print("========== layer z: \(z) ==========")
+        let zminus1 = cubes.filter { (element) -> Bool in element.key[2] == z }
+        let xArr = zminus1.map { $0.0[0] }.sorted()
+        let yArr = zminus1.map { $0.0[1] }.sorted()
+        let xMin = xArr.min() ?? 0
+        let xMax = xArr.max() ?? 0
+        let yMin = yArr.min() ?? 0
+        let yMax = yArr.max() ?? 0
+        for y in (yMin - 1)...(yMax + 1) {
+            var s = ""
+            for x in (xMin - 1)...(xMax + 1) {
+                let cube = [x, y, z]
+                let isActive = cubes[ cube ] ?? false
+                s = s + (isActive ? "#" : "." )
+            }
+            print(s)
         }
-        return true
-    }
-
-    func isNumberValid(number: Int) -> Bool {
-        var result = false
-        for (_, v) in rules {
-            result = result || v.contains(number: number)
-        }
-        return result
     }
 }
