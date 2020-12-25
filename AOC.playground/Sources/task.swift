@@ -1,6 +1,6 @@
 import Foundation
 
-public class Day18Part1 {
+public class Day18Part2 {
 
     private let url = Bundle.main.url(forResource: "input", withExtension: "txt")
     private var input: [String] = []
@@ -17,8 +17,10 @@ public class Day18Part1 {
     }
 }
 
-public extension Day18Part1 {
+public extension Day18Part2 {
 
+    // I used algorithm to convert infix to postfix
+    // http://faculty.cs.niu.edu/~hutchins/csci241/eval.htm
     func solve() -> Int {
         let calc = Calculator()
         var sum = 0
@@ -47,6 +49,15 @@ public class Calculator {
                     return "*"
                 case .divide:
                     return "/"
+            }
+        }
+
+        var precedence: Int {
+            switch self {
+                case .add:
+                    return 2
+                default:
+                    return 1
             }
         }
     }
@@ -126,11 +137,14 @@ public class Calculator {
                 }
                 _ = stack.removeFirst()
             }
-            if case .operation(_) = op {
+            if case .operation(let m) = op {
                 if stack.isEmpty || (stack[0] == .leftParenthesis) {
                     stack.insert(op, at: 0)
                 } else {
                     while stack.isEmpty == false && stack[0] != .leftParenthesis {
+                        if case .operation(let m1) = stack[0], m.precedence > m1.precedence {
+                            break
+                        }
                         let element = stack.removeFirst()
                         result.append(element)
                     }
